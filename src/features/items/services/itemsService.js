@@ -42,13 +42,20 @@ export const subscribeToItems = (filter, callback) => {
     q = query(itemsRef, where('type', '==', 'FOUND'), orderBy('timestamp', 'desc'));
   }
 
-  return onSnapshot(q, (snapshot) => {
-    const items = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    callback(items);
-  });
+  return onSnapshot(
+    q, 
+    (snapshot) => {
+      const items = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      callback({ success: true, data: items });
+    },
+    (error) => {
+      console.error('[itemsService] subscribeToItems error:', error);
+      callback({ success: false, error: error.message });
+    }
+  );
 };
 
 export const getItemById = async (id) => {
@@ -80,6 +87,23 @@ export const deleteItem = async (id) => {
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
+  }
+};
+
+export const getUserActiveItems = async (uid) => {
+  try {
+    const itemsRef = collection(db, 'items');
+    const q = query(
+      itemsRef,
+      where('ownerId', '==', uid),
+      where('isResolved', '==', false),
+      orderBy('timestamp', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return { success: true, data: items };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 };
 

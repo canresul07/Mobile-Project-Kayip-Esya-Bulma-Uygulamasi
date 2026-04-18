@@ -11,8 +11,10 @@ import {
   getDocs,
   deleteDoc,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '@/core/firebase';
+import { sendNotification } from '@/features/notifications/services/notificationService';
 
 const CHATS_COL = 'chats';
 const MESSAGES_COL = 'messages';
@@ -90,6 +92,21 @@ export const sendMessage = async (chatId, senderId, text, imageUrl = null) => {
       lastMessage: text || (imageUrl ? '📷 Fotoğraf' : ''),
       lastMessageTimestamp: serverTimestamp(),
     });
+
+    // Send Notification to recipient
+    const chatSnap = await getDoc(chatRef);
+    if (chatSnap.exists()) {
+      const chatData = chatSnap.data();
+      const recipientId = chatData.participants.find(id => id !== senderId);
+      const senderName = chatData.participantDetails[senderId]?.name || 'Bir kullanıcı';
+      
+      await sendNotification(recipientId, 'NEW_MESSAGE', {
+        senderId,
+        senderName,
+        chatId,
+        text: text || 'Bir fotoğraf gönderdi',
+      });
+    }
 
     return { success: true };
   } catch (e) {

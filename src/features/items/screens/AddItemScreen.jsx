@@ -14,6 +14,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,18 +40,27 @@ const AddItemScreen = () => {
   const [errors, setErrors] = useState({});
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri izni gerekli.');
-      return;
+    console.log('[ImagePicker] Item photo picker başlatılıyor...');
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri izni gerekli.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7,
+      });
+      if (!result.canceled) {
+        console.log('[ImagePicker] Eşya fotoğrafı seçildi:', result.assets[0].uri);
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('[ImagePicker] Hata:', error);
+      Alert.alert('Hata', 'Galeri açılırken bir sorun oluştu.');
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-    });
-    if (!result.canceled) setImageUri(result.assets[0].uri);
   };
 
   const validate = () => {
@@ -88,8 +98,14 @@ const AddItemScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar style="light" />
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.content} 
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -150,7 +166,8 @@ const AddItemScreen = () => {
           {errors.category && <Text style={styles.errorLabel}>{errors.category}</Text>}
 
           <Input
-            placeholder="Eşya Adı"
+            label="Eşya Adı"
+            placeholder="Örn: Mavi Sırt Çantası"
             value={title}
             onChangeText={setTitle}
             error={errors.title}
@@ -158,24 +175,27 @@ const AddItemScreen = () => {
           />
 
           <Input
-            placeholder="Açıklama (renk, marka, özellik...)"
+            label="Detaylı Açıklama"
+            placeholder="Renk, marka, ayırıcı özellikler veya nerede unuttuğunuzu detaylandırın..."
             value={description}
             onChangeText={setDescription}
             error={errors.description}
             multiline
-            numberOfLines={4}
+            numberOfLines={5}
             style={styles.textArea}
-            textAlignVertical="top"
           />
+
 
           <Text style={styles.stepLabel}>4. Konum ve Tarih</Text>
           <Input
-            placeholder="Konum (örn: A Blok, Kafeterya)"
+            label="Konum"
+            placeholder="Örn: A Blok, 2. Kat, Kantin Yanı"
             value={location}
             onChangeText={setLocation}
             error={errors.location}
             icon="location-outline"
           />
+
 
           <TouchableOpacity
             style={styles.picker}
@@ -245,8 +265,13 @@ const AddItemScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primary },
-  content: { paddingBottom: 40 },
-  header: { paddingHorizontal: 24, paddingVertical: 20 },
+  scrollView: { flex: 1, backgroundColor: colors.surface },
+  content: { paddingBottom: 120 },
+  header: { 
+    paddingHorizontal: 24, 
+    paddingVertical: 20,
+    backgroundColor: colors.primary,
+  },
   backBtn: { marginBottom: 12 },
   title: { fontSize: 26, fontWeight: 'bold', color: '#fff' },
   subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
@@ -258,7 +283,16 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     flex: 1,
   },
-  stepLabel: { fontSize: 15, fontWeight: 'bold', color: colors.onSurface, marginBottom: 12, marginTop: 20 },
+  stepLabel: { 
+    fontSize: 16, 
+    fontWeight: '800', 
+    color: colors.primary, 
+    marginBottom: 16, 
+    marginTop: 24,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+
   typeRow: { flexDirection: 'row', gap: 12 },
   typeBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -297,17 +331,18 @@ const styles = StyleSheet.create({
   textArea: { minHeight: 120 },
   submitBtn: {
     backgroundColor: colors.secondary,
-    borderRadius: 16,
-    height: 56,
+    borderRadius: 20,
+    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 32,
-    marginBottom: 20,
-    shadowColor: colors.secondary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
+    marginTop: 40,
+    marginBottom: 30,
+    shadowColor: colors.secondary, shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4, shadowRadius: 10, elevation: 12,
   },
-  disabledBtn: { opacity: 0.7 },
-  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  disabledBtn: { opacity: 0.6 },
+  submitBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', letterSpacing: 0.5 },
+
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: colors.surface,

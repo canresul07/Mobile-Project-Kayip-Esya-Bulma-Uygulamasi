@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -33,6 +34,7 @@ const HomeScreen = () => {
     searchQuery,
     setFilter,
     setSearchQuery,
+    error,
     fetchStats,
   } = useItems();
   
@@ -47,37 +49,56 @@ const HomeScreen = () => {
   }, [fetchStats]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar style="light" />
+      <View style={styles.headerBackground}>
       <View style={styles.appBar}>
         <View>
-          <Text style={styles.greeting}>Merhaba 👋</Text>
-          <Text style={styles.userName}>{userProfile?.name || 'Kullanıcı'}</Text>
+          <Text style={styles.greeting}>İyi günler, 👋</Text>
+          <Text style={styles.userName}>{userProfile?.name?.split(' ')[0] || 'Kullanıcı'}</Text>
         </View>
-        <TouchableOpacity style={styles.notifBtn}>
-          <Ionicons name="notifications-outline" size={22} color="#fff" />
+        <TouchableOpacity 
+          style={styles.notifBtn} 
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Notifications')}
+        >
+          <View style={styles.notifBadge} />
+          <Ionicons name="notifications-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={styles.searchSection}>
         <Input
-          placeholder="Eşya veya konum ara..."
+          placeholder="Eşya, kategori veya konum ara..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           icon="search-outline"
-          style={styles.searchInput}
+          containerStyle={styles.searchBarContainer}
+          wrapperStyle={styles.searchBarWrapper}
+          style={styles.searchBarInput}
           rightElement={
             searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={18} color={colors.textHint} />
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="close-circle" size={20} color={colors.textHint} />
               </TouchableOpacity>
-            ) : null
+            ) : (
+              <TouchableOpacity style={styles.filterBarBtn}>
+                <Ionicons name="options-outline" size={20} color={colors.primary} />
+              </TouchableOpacity>
+            )
           }
         />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.chipsScroll}
+          contentContainerStyle={styles.chipsContent}
+        >
           {FILTERS.map((f) => (
             <TouchableOpacity
               key={f.key}
+              activeOpacity={0.8}
               style={[styles.chip, activeFilter === f.key && styles.chipActive]}
               onPress={() => setFilter(f.key)}
             >
@@ -88,57 +109,84 @@ const HomeScreen = () => {
           ))}
         </ScrollView>
       </View>
+    </View>
 
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={() => (
-          <>
-            <View style={styles.statsRow}>
-              {[
-                { label: 'Aktif Kayıp', value: stats.lostCount, color: colors.lostColor },
-                { label: 'Bulunan', value: stats.foundCount, color: colors.foundColor },
-                { label: 'Bugün', value: stats.todayCount, color: colors.primary },
-              ].map((stat) => (
-                <View key={stat.label} style={styles.statCard}>
-                  <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
-                  <Text style={styles.statLabel}>{stat.label}</Text>
-                </View>
-              ))}
-            </View>
 
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Son İlanlar</Text>
-              <Text style={styles.seeAll}>Tümünü Gör</Text>
-            </View>
-          </>
-        )}
-        renderItem={({ item }) => (
-          <ItemCard
-            item={item}
-            onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
-          />
-        )}
-        ListEmptyComponent={() =>
-          loading ? (
-            <ActivityIndicator color={colors.primary} style={styles.loader} />
-          ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🔍</Text>
-              <Text style={styles.emptyTitle}>Henüz ilan yok</Text>
-              <Text style={styles.emptySubtitle}>İlan eklemek için aşağıdaki + butonuna tıkla</Text>
-            </View>
-          )
-        }
-        showsVerticalScrollIndicator={false}
-      />
+      <View style={styles.contentWrapper}>
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={() => (
+            <>
+              <View style={styles.statsRow}>
+                {[
+                  { label: 'Aktif Kayıp', value: stats.lostCount, color: colors.lostColor, filter: 'LOST' },
+                  { label: 'Bulunan', value: stats.foundCount, color: colors.foundColor, filter: 'FOUND' },
+                  { label: 'Bugün', value: stats.todayCount, color: colors.primary, filter: 'ALL' },
+                ].map((stat) => (
+                  <TouchableOpacity 
+                    key={stat.label} 
+                    style={[
+                      styles.statCard, 
+                      activeFilter === stat.filter && { borderColor: stat.color, borderWidth: 1 }
+                    ]}
+                    onPress={() => setFilter(stat.filter)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
+                    <Text style={styles.statLabel}>{stat.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Son İlanlar</Text>
+                <Text style={styles.seeAll}>Tümünü Gör</Text>
+              </View>
+            </>
+          )}
+          renderItem={({ item }) => (
+            <ItemCard
+              item={item}
+              onPress={() => navigation.navigate('ItemDetail', { itemId: item.id })}
+            />
+          )}
+          ListEmptyComponent={() =>
+            loading ? (
+              <ActivityIndicator color={colors.primary} style={styles.loader} />
+            ) : error ? (
+              <View style={styles.errorState}>
+                <Ionicons name="alert-circle-outline" size={64} color={colors.lostColor} />
+                <Text style={styles.errorTitle}>Listeleme Hatası</Text>
+                <Text style={styles.errorSubtitle}>
+                  {error.includes('index') 
+                    ? 'Filtreleme için gerekli indeks henüz hazır değil. Lütfen terminaldeki linke tıklayarak indeksi oluşturun.' 
+                    : error}
+                </Text>
+                <TouchableOpacity style={styles.retryBtn} onPress={() => setFilter('ALL')}>
+                  <Text style={styles.retryBtnText}>Filtreyi Temizle</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>🔍</Text>
+                <Text style={styles.emptyTitle}>Henüz ilan yok</Text>
+                <Text style={styles.emptySubtitle}>İlan eklemek için aşağıdaki + butonuna tıkla</Text>
+              </View>
+            )
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.primary },
+  headerBackground: { backgroundColor: colors.primary },
+  contentWrapper: { flex: 1, backgroundColor: colors.background },
   appBar: {
     backgroundColor: colors.primary,
     flexDirection: 'row',
@@ -151,23 +199,54 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   userName: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
   notifBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  searchContainer: { backgroundColor: colors.primary, paddingBottom: 20, paddingHorizontal: 16 },
-  searchInput: { backgroundColor: '#fff', borderRadius: 14, marginBottom: 14, height: 48 },
-  chipsScroll: { flexDirection: 'row' },
-  chip: {
-    paddingHorizontal: 18, paddingVertical: 8,
-    borderRadius: 20, marginRight: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+  notifBadge: {
+    position: 'absolute', top: 12, right: 12,
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: colors.secondary,
+    borderWidth: 2, borderColor: colors.primary,
+    zIndex: 1,
   },
-  chipActive: { backgroundColor: '#fff' },
-  chipText: { fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
-  chipTextActive: { color: colors.primary },
-  listContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  searchSection: { 
+    backgroundColor: colors.primary, 
+    paddingBottom: 24, 
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  searchBarContainer: { marginHorizontal: 20, marginBottom: 16 },
+  searchBarWrapper: { 
+    backgroundColor: '#fff', 
+    borderRadius: 20, 
+    height: 60,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  searchBarInput: { fontSize: 16 },
+  filterBarBtn: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: colors.background,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  chipsScroll: { marginTop: 4 },
+  chipsContent: { paddingHorizontal: 20, gap: 10 },
+  chip: {
+    paddingHorizontal: 20, paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+  },
+  chipActive: { backgroundColor: '#fff', borderColor: '#fff' },
+  chipText: { fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
+  chipTextActive: { color: colors.primary, fontWeight: 'bold' },
+  listContent: { paddingHorizontal: 16, paddingBottom: 120 },
+
   statsRow: { flexDirection: 'row', gap: 8, marginTop: 20, marginBottom: 4 },
   statCard: {
     flex: 1, backgroundColor: colors.surface, borderRadius: 16,
@@ -184,10 +263,14 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: colors.onSurface },
   seeAll: { fontSize: 13, color: colors.primary },
   loader: { marginTop: 40 },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyEmoji: { fontSize: 64 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: colors.onSurface, marginTop: 16 },
-  emptySubtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 8 },
+  errorState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+  errorTitle: { fontSize: 18, fontWeight: 'bold', color: colors.onSurface, marginTop: 16 },
+  errorSubtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  retryBtn: { 
+    marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, 
+    backgroundColor: colors.primary, borderRadius: 12 
+  },
+  retryBtnText: { color: '#fff', fontWeight: 'bold' },
 });
 
 export default HomeScreen;

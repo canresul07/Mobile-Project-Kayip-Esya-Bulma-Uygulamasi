@@ -7,6 +7,7 @@ import {
   browserLocalPersistence,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   EXPO_PUBLIC_FIREBASE_API_KEY as FIREBASE_API_KEY,
@@ -63,5 +64,6 @@ function getOrInitAuth() {
 
 export const auth = getOrInitAuth();
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 export default app;

@@ -23,5 +23,11 @@ service cloud.firestore {
           && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
       }
     }
+
+    match /notifications/{notifId} {
+      allow read, update: if request.auth != null 
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
+    }
   }
 }

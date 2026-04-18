@@ -5,8 +5,22 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+  collection,
+  query,
+  getDocs,
+  orderBy,
+  startAt,
+  endAt,
+  limit,
+  updateDoc,
+} from 'firebase/firestore';
 import { auth, db } from '@/core/firebase';
+import { uploadImageToCloudinary } from '@/core/storage';
 
 /**
  * Maps Firebase errors to user-friendly messages.
@@ -89,3 +103,80 @@ export const getUserProfile = async (uid) => {
 };
 
 export const onAuthChange = (callback) => onAuthStateChanged(auth, callback);
+
+export const searchUsers = async (searchQuery, currentUserUid) => {
+  try {
+    const usersRef = collection(db, 'users');
+    // Simple prefix search simulation for Firestore
+    const q = query(
+      usersRef,
+      orderBy('name'),
+      startAt(searchQuery),
+      endAt(searchQuery + '\uf8ff'),
+      limit(20)
+    );
+
+    const snapshot = await getDocs(q);
+    const users = snapshot.docs
+      .map((doc) => ({ uid: doc.id, ...doc.data() }))
+      .filter((u) => u.uid !== currentUserUid);
+    
+    return { success: true, data: users };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Uploads a profile image to Cloudinary.
+ * @param {string} uid 
+ * @param {string} imageUri 
+ */
+export const uploadProfileImage = async (uid, imageUri) => {
+  try {
+    const result = await uploadImageToCloudinary(imageUri);
+    return result;
+  } catch (error) {
+    console.error('[AuthService] Image upload error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Updates user profile data in Firestore and Firebase Auth.
+ * @param {string} uid 
+ * @param {object} updates { name, department, studentId, phoneNumber, profilePicture }
+ */
+export const updateUserProfile = async (uid, updates) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Oturum açmış kullanıcı bulunamadı.');
+
+    // Update Firebase Auth display name if provided
+    if (updates.name) {
+      await updateProfile(user, { displayName: updates.name });
+    }
+
+    // Update Firestore document
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: mapErrorToMessage(error) };
+  }
+};
+
+export default {
+  registerUser,
+  loginUser,
+  logoutUser,
+  getUserProfile,
+  onAuthChange,
+  searchUsers,
+  updateUserProfile,
+  uploadProfileImage,
+};

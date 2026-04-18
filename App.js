@@ -17,7 +17,7 @@ export default function App() {
         <RootNavigator />
       </AuthProvider>
       <Toast />
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
     </>
   );
 }

@@ -8,8 +8,10 @@ import {
   Alert,
   Switch,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../hooks/useAuth';
@@ -20,18 +22,20 @@ import { colors } from '@/shared/theme/colors';
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const { user, userProfile, logout } = useAuth();
-  const { fetchMyItems } = useItems();
+  const { fetchMyItems, deleteItem } = useItems();
   
   const [myItems, setMyItems] = useState([]);
   const [loadingItems, setLoadingItems] = useState(true);
   const [notifications, setNotifications] = useState(true);
 
+  const load = async () => {
+    setLoadingItems(true);
+    const result = await fetchMyItems();
+    if (result.success) setMyItems(result.data);
+    setLoadingItems(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      const result = await fetchMyItems();
-      if (result.success) setMyItems(result.data);
-      setLoadingItems(false);
-    };
     load();
   }, [fetchMyItems]);
 
@@ -42,9 +46,34 @@ const ProfileScreen = () => {
     ]);
   };
 
-  const activeCount = myItems.filter((i) => !i.isResolved).length;
-  const resolvedCount = myItems.filter((i) => i.isResolved).length;
-  const initials = userProfile?.name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'KK';
+  const handleDeleteItem = (itemId) => {
+    Alert.alert(
+      'İlanı Sil',
+      'Bu ilanı tamamen kaldırmak istediğine emin misin? Bu işlem geri alınamaz.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        { 
+          text: 'Sil', 
+          style: 'destructive', 
+          onPress: async () => {
+            const result = await deleteItem(itemId);
+            if (result.success) {
+              // Optimistic update
+              setMyItems(prev => prev.filter(item => item.id !== itemId));
+              Alert.alert('Başarılı', 'İlan başarıyla kaldırıldı.');
+            } else {
+              Alert.alert('Hata', 'İlan silinirken bir sorun oluştu: ' + result.error);
+            }
+          } 
+        },
+      ]
+    );
+  };
+
+  const activeCount = (myItems || []).filter((i) => !i.isResolved).length;
+  const resolvedCount = (myItems || []).filter((i) => i.isResolved).length;
+  const displayName = userProfile?.name || 'Kullanıcı';
+  const initials = displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || 'KK';
 
   const SettingItem = ({ icon, label, onPress, right, danger }) => (
     <TouchableOpacity style={styles.settingItem} onPress={onPress}>
@@ -57,90 +86,104 @@ const ProfileScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          <Text style={styles.name}>{userProfile?.name || 'Kullanıcı'}</Text>
-          <Text style={styles.dept}>
-            {userProfile?.department ? `${userProfile.department} • ` : ''}
-            {userProfile?.studentId ? `No: ${userProfile.studentId}` : ''}
-          </Text>
-        </View>
-
-        <View style={styles.statsRow}>
-          {[
-            { label: 'Aktif İlan', value: activeCount, color: colors.primary },
-            { label: 'Çözüldü', value: resolvedCount, color: colors.foundColor },
-            { label: 'Güvenilir', value: '5.0', color: '#FFD700', isIcon: true },
-          ].map((s, idx) => (
-            <View key={idx} style={styles.statCard}>
-              <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar style="light" />
+      <View style={styles.contentWrapper}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <View style={styles.avatarContainer}>
+              {userProfile?.profilePicture ? (
+                <Image source={{ uri: userProfile.profilePicture }} style={styles.avatarImg} />
+              ) : (
+                <Text style={styles.avatarText}>{initials}</Text>
+              )}
             </View>
-          ))}
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>İlanlarım</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text style={styles.sectionCount}>{myItems.length} ilan</Text>
-          </TouchableOpacity>
-        </View>
-
-        {loadingItems ? (
-          <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
-        ) : myItems.length === 0 ? (
-          <View style={styles.emptyItems}>
-            <Ionicons name="document-text-outline" size={48} color={colors.textHint} />
-            <Text style={styles.emptyItemsText}>Henüz ilan oluşturmadın</Text>
+            <Text style={styles.name}>{displayName}</Text>
+            <Text style={styles.dept}>
+              {userProfile?.department ? `${userProfile.department} • ` : ''}
+              {userProfile?.studentId ? `No: ${userProfile.studentId}` : ''}
+            </Text>
           </View>
-        ) : (
-          <View style={styles.myItemsList}>
-            {myItems.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                onPress={() => navigation.navigate('HomeTab', {
-                  screen: 'ItemDetail',
-                  params: { itemId: item.id },
-                })}
-              />
+
+          <View style={styles.statsRow}>
+            {[
+              { label: 'Aktif İlan', value: activeCount, color: colors.primary },
+              { label: 'Çözüldü', value: resolvedCount, color: colors.foundColor },
+              { label: 'Güvenilir', value: '5.0', color: '#FFD700', isIcon: true },
+            ].map((s, idx) => (
+              <View key={idx} style={styles.statCard}>
+                <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
             ))}
           </View>
-        )}
 
-        <Text style={styles.sectionTitleGroup}>Hesap Ayarları</Text>
-        <View style={styles.settingsCard}>
-          <SettingItem icon="person-outline" label="Profili Düzenle" onPress={() => {}} />
-          <View style={styles.settingDivider} />
-          <SettingItem
-            icon="notifications-outline"
-            label="Bildirimler"
-            right={
-              <Switch
-                value={notifications}
-                onValueChange={setNotifications}
-                trackColor={{ false: colors.divider, true: colors.primaryLight }}
-                thumbColor={notifications ? colors.primary : '#fff'}
-              />
-            }
-          />
-          <View style={styles.settingDivider} />
-          <SettingItem icon="information-circle-outline" label="Uygulama Hakkında" onPress={() => {}} />
-          <View style={styles.settingDivider} />
-          <SettingItem icon="log-out-outline" label="Çıkış Yap" onPress={handleLogout} danger />
-        </View>
-      </ScrollView>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>İlanlarım</Text>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.sectionCount}>{myItems.length} ilan</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loadingItems ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
+          ) : myItems.length === 0 ? (
+            <View style={styles.emptyItems}>
+              <Ionicons name="document-text-outline" size={48} color={colors.textHint} />
+              <Text style={styles.emptyItemsText}>Henüz ilan oluşturmadın</Text>
+            </View>
+          ) : (
+            <View style={styles.myItemsList}>
+              {myItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onDelete={handleDeleteItem}
+                  onPress={() => navigation.navigate('HomeTab', {
+                    screen: 'ItemDetail',
+                    params: { itemId: item.id },
+                  })}
+                />
+              ))}
+            </View>
+          )}
+
+          <Text style={styles.sectionTitleGroup}>Hesap Ayarları</Text>
+          <View style={styles.settingsCard}>
+            <SettingItem 
+              icon="person-outline" 
+              label="Profili Düzenle" 
+              onPress={() => navigation.navigate('EditProfile')} 
+            />
+            <View style={styles.settingDivider} />
+            <SettingItem
+              icon="notifications-outline"
+              label="Bildirimler"
+              right={
+                <Switch
+                  value={notifications}
+                  onValueChange={setNotifications}
+                  trackColor={{ false: colors.divider, true: colors.primaryLight }}
+                  thumbColor={notifications ? colors.primary : '#fff'}
+                />
+              }
+            />
+            <View style={styles.settingDivider} />
+            <SettingItem icon="information-circle-outline" label="Uygulama Hakkında" onPress={() => {}} />
+            <View style={styles.settingDivider} />
+            <SettingItem icon="log-out-outline" label="Çıkış Yap" onPress={handleLogout} danger />
+          </View>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: colors.primary },
+  headerBackground: { backgroundColor: colors.primary },
+  contentWrapper: { flex: 1, backgroundColor: colors.background },
+  content: { paddingBottom: 120 },
   header: {
     backgroundColor: colors.primary,
     alignItems: 'center',
@@ -154,7 +197,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1, shadowRadius: 10,
+    overflow: 'hidden',
   },
+  avatarImg: { width: '100%', height: '100%' },
   avatarText: { fontSize: 36, fontWeight: 'bold', color: colors.primary },
   name: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginTop: 16 },
   dept: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4, textAlign: 'center' },

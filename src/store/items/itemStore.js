@@ -15,7 +15,7 @@ export const useItemStore = create((set, get) => ({
   setFilter: (activeFilter) => set({ activeFilter }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   getFilteredItems: () => {
-    const { items, activeFilter, searchQuery } = get();
+    const { items = [], activeFilter, searchQuery } = get();
     return items.filter((item) => {
       const matchesFilter =
         activeFilter === 'ALL' ||

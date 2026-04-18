@@ -6,9 +6,9 @@ import { timeAgo } from '@/shared/utils/timeAgo';
 
 /**
  * ItemCard component for displaying item summaries.
- * @param {object} props { item, onPress }
+ * @param {object} props { item, onPress, onDelete }
  */
-export const ItemCard = ({ item, onPress }) => {
+export const ItemCard = ({ item, onPress, onDelete }) => {
   const isLost = item.type === 'LOST';
   const initials = item.ownerName?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'KK';
 
@@ -24,6 +24,18 @@ export const ItemCard = ({ item, onPress }) => {
           <Text style={styles.categoryText} numberOfLines={1}>{item.category}</Text>
         </View>
         <Text style={styles.timeText}>{timeAgo(item.timestamp)}</Text>
+        
+        {onDelete && (
+          <TouchableOpacity 
+            style={styles.deleteBtn} 
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete(item.id);
+            }}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.lostColor} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.contentRow}>
@@ -84,6 +96,12 @@ const styles = StyleSheet.create({
   },
   categoryText: { fontSize: 11, color: colors.primary },
   timeText: { fontSize: 11, color: colors.textHint },
+  deleteBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: colors.lostBg,
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 8,
+  },
   contentRow: { flexDirection: 'row', gap: 14 },
   imageContainer: { width: 80, height: 80, borderRadius: 12, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
@@ -114,3 +132,4 @@ const styles = StyleSheet.create({
   },
   contactBtnText: { fontSize: 12, fontWeight: 'bold', color: colors.primary },
 });
+

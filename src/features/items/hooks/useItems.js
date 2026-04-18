@@ -22,8 +22,13 @@ export const useItems = () => {
 
   useEffect(() => {
     setLoading(true);
-    const unsubscribe = itemsService.subscribeToItems(activeFilter, (newItems) => {
-      setItems(newItems);
+    const unsubscribe = itemsService.subscribeToItems(activeFilter, (result) => {
+      if (result.success) {
+        setItems(result.data);
+        setError(null);
+      } else {
+        setError(result.error);
+      }
       setLoading(false);
     });
     return () => unsubscribe();

@@ -87,6 +87,41 @@ export const useAuth = () => {
     return result;
   };
 
+  const updateProfile = async (updates, imageUri = null) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let finalUpdates = { ...updates };
+
+      if (imageUri) {
+        const uploadResult = await authService.uploadProfileImage(user.uid, imageUri);
+        if (uploadResult.success) {
+          finalUpdates.profilePicture = uploadResult.url;
+        } else {
+          setLoading(false);
+          return uploadResult;
+        }
+      }
+
+      const result = await authService.updateUserProfile(user.uid, finalUpdates);
+      if (result.success) {
+        // Refresh local profile
+        const profileResponse = await authService.getUserProfile(user.uid);
+        if (profileResponse.success) {
+          setUserProfile(profileResponse.data);
+        }
+      } else {
+        setError(result.error);
+      }
+      setLoading(false);
+      return result;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      return { success: false, error: err.message };
+    }
+  };
+
   return {
     user,
     userProfile,
@@ -95,5 +130,6 @@ export const useAuth = () => {
     login,
     register,
     logout,
+    updateProfile,
   };
 };

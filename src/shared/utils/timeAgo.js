@@ -6,7 +6,18 @@
 export const timeAgo = (date) => {
   if (!date) return '';
   const now = new Date().getTime();
-  const past = (date instanceof Date ? date : new Date(date)).getTime();
+  
+  // Handle Firestore Timestamp
+  let d;
+  if (date?.toDate) {
+    d = date.toDate();
+  } else if (date?.seconds) {
+    d = new Date(date.seconds * 1000);
+  } else {
+    d = new Date(date);
+  }
+
+  const past = d.getTime();
   const diff = now - past;
 
   if (diff < 60_000) return 'Az önce';
