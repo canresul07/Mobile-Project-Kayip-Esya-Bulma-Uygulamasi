@@ -19,12 +19,12 @@ Kendi sunucun (Node, SQL vb.) yok; backend **Firebase** üzerinden çalışır.
 - `.env` dosyasında şu anahtarların doldurulması gerektiğini bil:
 
 ```env
-FIREBASE_API_KEY=
-FIREBASE_AUTH_DOMAIN=
-FIREBASE_PROJECT_ID=
-FIREBASE_STORAGE_BUCKET=
-FIREBASE_MESSAGING_SENDER_ID=
-FIREBASE_APP_ID=
+EXPO_PUBLIC_FIREBASE_API_KEY=
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+EXPO_PUBLIC_FIREBASE_APP_ID=
 ```
 
 ---
@@ -63,12 +63,12 @@ Bu alanlar birebir `.env` ile eşleşir:
 
 | firebaseConfig alanı | .env değişkeni |
 |----------------------|----------------|
-| `apiKey` | `FIREBASE_API_KEY` |
-| `authDomain` | `FIREBASE_AUTH_DOMAIN` |
-| `projectId` | `FIREBASE_PROJECT_ID` |
-| `storageBucket` | `FIREBASE_STORAGE_BUCKET` |
-| `messagingSenderId` | `FIREBASE_MESSAGING_SENDER_ID` |
-| `appId` | `FIREBASE_APP_ID` |
+| `apiKey` | `EXPO_PUBLIC_FIREBASE_API_KEY` |
+| `authDomain` | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` |
+| `projectId` | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` |
+| `storageBucket` | `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` |
+| `messagingSenderId` | `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` |
+| `appId` | `EXPO_PUBLIC_FIREBASE_APP_ID` |
 
 ---
 
@@ -79,12 +79,12 @@ Bu alanlar birebir `.env` ile eşleşir:
 3. **Tırnak kullanma** (çoğu araçta gerekmez):
 
 ```env
-FIREBASE_API_KEY=AIza...
-FIREBASE_AUTH_DOMAIN=proje-id.firebaseapp.com
-FIREBASE_PROJECT_ID=proje-id
-FIREBASE_STORAGE_BUCKET=proje-id.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=123456789012
-FIREBASE_APP_ID=1:123456789012:web:abcdef
+EXPO_PUBLIC_FIREBASE_API_KEY=AIza...
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=proje-id.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=proje-id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=proje-id.appspot.com
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
+EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef
 ```
 
 4. `.env` dosyasını **asla** public repoya commit etme; `.gitignore` içinde kalsın.

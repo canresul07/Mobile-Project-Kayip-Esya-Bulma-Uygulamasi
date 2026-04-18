@@ -20,7 +20,7 @@
     "expo-image-picker": "~17.0.10",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
-    "firebase": "^12.11.0",
+    "firebase": "^12.12.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.72.1",
@@ -35,7 +35,17 @@
   },
   "private": true,
   "devDependencies": {
-    "babel-preset-expo": "^55.0.15",
-    "dotenv": "^17.4.1"
+    "babel-plugin-module-resolver": "^5.0.3",
+    "babel-preset-expo": "~54.0.10",
+    "dotenv": "^17.4.1",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.8.3"
   }
 }
