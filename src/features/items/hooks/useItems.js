@@ -11,14 +11,21 @@ export const useItems = () => {
     error,
     activeFilter,
     searchQuery,
+    categoryFilter,
+    dateInterval,
+    visibleItemsCount,
     setItems,
     setLoading,
     setError,
     setFilter,
     setSearchQuery,
+    setCategoryFilter,
+    setDateInterval,
+    loadMore,
     getFilteredItems,
+    getPaginatedItems,
   } = useItemStore();
-  const { user } = useAuthStore();
+  const { user, userProfile } = useAuthStore();
 
   useEffect(() => {
     setLoading(true);
@@ -38,24 +45,33 @@ export const useItems = () => {
     if (!user) return { success: false, error: 'Giriş yapmalısınız' };
     setLoading(true);
 
-    let imageUrl = '';
-    if (imageUri) {
-      const uploadResult = await uploadImageToCloudinary(imageUri);
-      if (!uploadResult.success) {
-        setLoading(false);
-        return { success: false, error: uploadResult.error || 'Fotoğraf yüklenemedi' };
+    try {
+      let imageUrl = '';
+      if (imageUri) {
+        const uploadResult = await uploadImageToCloudinary(imageUri);
+        if (!uploadResult.success) {
+          setLoading(false);
+          return { success: false, error: uploadResult.error || 'Fotoğraf yüklenemedi' };
+        }
+        imageUrl = uploadResult.url || '';
       }
-      imageUrl = uploadResult.url || '';
+
+      const result = await itemsService.addItem({
+        ...formData,
+        imageUrl,
+        ownerId: user.uid,
+        ownerName: userProfile?.name || user.displayName || 'İsimsiz Kullanıcı',
+        ownerPhoto: userProfile?.profilePicture || user.photoURL || '',
+        ownerDepartment: userProfile?.department || '',
+      });
+
+      setLoading(false);
+      return result;
+    } catch (error) {
+      console.error('[useItems] addItem error:', error);
+      setLoading(false);
+      return { success: false, error: 'İlan oluşturulurken bir hata oluştu.' };
     }
-
-    const result = await itemsService.addItem({
-      ...formData,
-      imageUrl,
-      ownerId: user.uid,
-    });
-
-    setLoading(false);
-    return result;
   };
 
   const deleteItem = async (id) => {
@@ -73,12 +89,19 @@ export const useItems = () => {
   return {
     items,
     filteredItems: getFilteredItems(),
+    paginatedItems: getPaginatedItems(),
     loading,
     error,
     activeFilter,
     searchQuery,
+    categoryFilter,
+    dateInterval,
+    visibleItemsCount,
     setFilter,
     setSearchQuery,
+    setCategoryFilter,
+    setDateInterval,
+    loadMore,
     addItem,
     deleteItem,
     resolveItem,

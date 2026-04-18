@@ -19,4 +19,5 @@ export const colors = {
   divider: '#E8EAFF',
   categoryBg: '#EEF0FF',
   star: '#FFB300',
+  avatarBg: '#E8EAF6', // Soft Indigo background for professional avatars
 };

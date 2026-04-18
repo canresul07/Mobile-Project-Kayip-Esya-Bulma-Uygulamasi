@@ -63,6 +63,22 @@ const AddItemScreen = () => {
     }
   };
 
+  const onDateChange = (event, selectedDate) => {
+    // Android'de seçimden veya iptalden sonra kapatılmalı
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+    
+    // iOS'ta seçim bittiğinde (buton tıklandığında) kapatılabilir
+    if (event.type === 'set' && Platform.OS === 'ios') {
+      setShowDatePicker(false);
+    }
+  };
+
   const validate = () => {
     const e = {};
     if (!category) e.category = 'Kategori seçin';
@@ -212,11 +228,9 @@ const AddItemScreen = () => {
             <DateTimePicker
               value={date}
               mode="date"
+              display="spinner"
               maximumDate={new Date()}
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(Platform.OS === 'ios');
-                if (selectedDate) setDate(selectedDate);
-              }}
+              onChange={onDateChange}
             />
           )}
 

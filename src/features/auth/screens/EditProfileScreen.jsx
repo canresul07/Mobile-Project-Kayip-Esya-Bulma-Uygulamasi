@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   avatarImg: { width: '100%', height: '100%', borderRadius: 55 },
   avatarPlaceholder: {
     width: '100%', height: '100%', borderRadius: 55,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.avatarBg,
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { fontSize: 40, fontWeight: 'bold', color: colors.primary },

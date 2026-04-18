@@ -4,6 +4,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  updatePassword as updateAuthPassword,
 } from 'firebase/auth';
 import {
   doc,
@@ -60,6 +61,7 @@ export const registerUser = async (email, password, userData) => {
     const userProfile = {
       uid: user.uid,
       name: userData.name,
+      nameLowerCase: userData.name.toLowerCase(),
       email,
       department: userData.department,
       createdAt: serverTimestamp(),
@@ -110,9 +112,9 @@ export const searchUsers = async (searchQuery, currentUserUid) => {
     // Simple prefix search simulation for Firestore
     const q = query(
       usersRef,
-      orderBy('name'),
-      startAt(searchQuery),
-      endAt(searchQuery + '\uf8ff'),
+      orderBy('nameLowerCase'),
+      startAt(searchQuery.toLowerCase()),
+      endAt(searchQuery.toLowerCase() + '\uf8ff'),
       limit(20)
     );
 
@@ -159,8 +161,13 @@ export const updateUserProfile = async (uid, updates) => {
 
     // Update Firestore document
     const userRef = doc(db, 'users', uid);
+    const updatedData = { ...updates };
+    if (updates.name) {
+      updatedData.nameLowerCase = updates.name.toLowerCase();
+    }
+
     await updateDoc(userRef, {
-      ...updates,
+      ...updatedData,
       updatedAt: serverTimestamp(),
     });
 
@@ -170,13 +177,50 @@ export const updateUserProfile = async (uid, updates) => {
   }
 };
 
+/**
+ * Changes current user's password.
+ * @param {string} newPassword 
+ */
+export const updatePassword = async (newPassword) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Oturum açmış kullanıcı bulunamadı.');
+    
+    await updateAuthPassword(user, newPassword);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: mapErrorToMessage(error) };
+  }
+};
+
+/**
+ * Ensures user profile has nameLowerCase for searching (auto-migration).
+ * @param {string} uid 
+ * @param {object} profile 
+ */
+export const ensureProfileConsistency = async (uid, profile) => {
+  if (profile && !profile.nameLowerCase && profile.name) {
+    console.log('[AuthService] Auto-patching nameLowerCase for search consistency...');
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        nameLowerCase: profile.name.toLowerCase()
+      });
+      return { ...profile, nameLowerCase: profile.name.toLowerCase() };
+    } catch (err) {
+      console.warn('[AuthService] nameLowerCase patch failed:', err);
+    }
+  }
+  return profile;
+};
+
 export default {
   registerUser,
   loginUser,
   logoutUser,
   getUserProfile,
   onAuthChange,
-  searchUsers,
   updateUserProfile,
   uploadProfileImage,
+  updatePassword,
+  ensureProfileConsistency,
 };

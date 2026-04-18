@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -15,9 +17,32 @@ import { colors } from '@/shared/theme/colors';
 const ChatUserDetailScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { user } = route.params;
+  const { user: initialUser } = route.params;
+  const [fullUser, setFullUser] = React.useState(initialUser);
+  const [loading, setLoading] = React.useState(false);
 
-  const initials = user.name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      if (initialUser.uid && (!initialUser.studentId || !initialUser.email)) {
+        setLoading(true);
+        try {
+          // Import service inside useEffect to avoid complexity if not ready
+          const { getUserProfile } = require('@/features/auth/services/authService');
+          const result = await getUserProfile(initialUser.uid);
+          if (result.success) {
+            setFullUser({ ...initialUser, ...result.data });
+          }
+        } catch (err) {
+          console.log('Error fetching user profile:', err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchUser();
+  }, [initialUser]);
+
+  const initials = fullUser.name?.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -33,43 +58,51 @@ const ChatUserDetailScreen = () => {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+            {fullUser.profilePicture ? (
+              <Image source={{ uri: fullUser.profilePicture }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
           </View>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userDept}>{user.department}</Text>
+          <Text style={styles.userName}>{fullUser.name}</Text>
+          <Text style={styles.userDept}>{fullUser.department || 'Öğrenci'}</Text>
         </View>
 
-        <View style={styles.infoSection}>
-          <View style={styles.infoRow}>
-            <View style={styles.iconBox}>
-              <Ionicons name="school-outline" size={22} color={colors.primary} />
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginBottom: 20 }} />
+        ) : (
+          <View style={styles.infoSection}>
+            <View style={styles.infoRow}>
+              <View style={styles.iconBox}>
+                <Ionicons name="school-outline" size={22} color={colors.primary} />
+              </View>
+              <View style={styles.infoTextWrapper}>
+                <Text style={styles.infoLabel}>Bölüm</Text>
+                <Text style={styles.infoValue}>{fullUser.department || 'Belirtilmemiş'}</Text>
+              </View>
             </View>
-            <View style={styles.infoTextWrapper}>
-              <Text style={styles.infoLabel}>Bölüm</Text>
-              <Text style={styles.infoValue}>{user.department || 'Belirtilmemiş'}</Text>
-            </View>
-          </View>
 
-          <View style={styles.infoRow}>
-            <View style={styles.iconBox}>
-              <Ionicons name="card-outline" size={22} color={colors.primary} />
+            <View style={styles.infoRow}>
+              <View style={styles.iconBox}>
+                <Ionicons name="card-outline" size={22} color={colors.primary} />
+              </View>
+              <View style={styles.infoTextWrapper}>
+                <Text style={styles.infoLabel}>Öğrenci No</Text>
+                <Text style={styles.infoValue}>{fullUser.studentId || 'Belirtilmemiş'}</Text>
+              </View>
             </View>
-            <View style={styles.infoTextWrapper}>
-              <Text style={styles.infoLabel}>Öğrenci No</Text>
-              <Text style={styles.infoValue}>{user.studentId || 'Belirtilmemiş'}</Text>
-            </View>
-          </View>
 
-          <View style={styles.infoRow}>
-            <View style={styles.iconBox}>
-              <Ionicons name="mail-outline" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.infoTextWrapper}>
-              <Text style={styles.infoLabel}>E-posta</Text>
-              <Text style={styles.infoValue}>{user.email || 'Gizli'}</Text>
+            <View style={styles.infoRow}>
+              <View style={styles.iconBox}>
+                <Ionicons name="mail-outline" size={22} color={colors.primary} />
+              </View>
+              <View style={styles.infoTextWrapper}>
+                <Text style={styles.infoLabel}>E-posta</Text>
+                <Text style={styles.infoValue}>{fullUser.email || 'Gizli'}</Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         <TouchableOpacity 
           style={styles.actionBtn}
@@ -150,6 +183,7 @@ const styles = StyleSheet.create({
     shadowColor: colors.secondary, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
+  avatarImg: { width: '100%', height: '100%', borderRadius: 50 },
   actionBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
 

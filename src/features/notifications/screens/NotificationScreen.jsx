@@ -87,25 +87,60 @@ const NotificationScreen = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     Alert.alert(
       'Bildirimi Sil',
       'Bu bildirimi silmek istediğine emin misin?',
       [
         { text: 'Vazgeç', style: 'cancel' },
-        { text: 'Sil', style: 'destructive', onPress: () => deleteNotification(id) }
+        { 
+          text: 'Sil', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              // Optimistic UI Update
+              setNotifications(prev => prev.filter(n => n.id !== id));
+              
+              const res = await deleteNotification(id);
+              if (!res.success) {
+                // Rollback if failed (listener will probably put it back anyway, but good to show error)
+                Alert.alert('Hata', 'Bildirim silinemedi: ' + res.error);
+              }
+            } catch (err) {
+              console.log('Delete notification error:', err);
+            }
+          } 
+        }
       ]
     );
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (!notifications.length) return;
     Alert.alert(
       'Tümünü Temizle',
       'Tüm bildirimlerini silmek istediğine emin misin? Bu işlem geri alınamaz.',
       [
         { text: 'Vazgeç', style: 'cancel' },
-        { text: 'Temizle', style: 'destructive', onPress: () => clearAllNotifications(user.uid) }
+        { 
+          text: 'Temizle', 
+          style: 'destructive', 
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const res = await clearAllNotifications(user.uid);
+              if (res.success) {
+                setNotifications([]); // Optimistic update
+              } else {
+                Alert.alert('Hata', 'Bildirimler temizlenemedi: ' + res.error);
+              }
+            } catch (err) {
+              console.log('Clear all notifications error:', err);
+            } finally {
+              setLoading(false);
+            }
+          } 
+        }
       ]
     );
   };

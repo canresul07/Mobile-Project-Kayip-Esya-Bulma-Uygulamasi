@@ -47,11 +47,22 @@ const UserSearchScreen = () => {
   }, [query, user.uid]);
 
   const handleSelectUser = async (targetUser) => {
-    setSelectedUser(targetUser);
-    setLoadingItems(true);
-    const result = await getUserActiveItems(targetUser.uid);
-    if (result.success) setUserItems(result.data);
-    setLoadingItems(false);
+    setLoading(true);
+    const result = await createOrGetChat(
+      user.uid,
+      { name: userProfile?.name, department: userProfile?.department },
+      targetUser.uid,
+      { name: targetUser.name, department: targetUser.department },
+      null // No initial item context for direct search
+    );
+    setLoading(false);
+
+    if (result.success) {
+      navigation.navigate('ChatSession', { 
+        chatId: result.data.id, 
+        otherUser: { name: targetUser.name, department: targetUser.department, uid: targetUser.uid } 
+      });
+    }
   };
 
   const handleStartChat = async (item = null) => {
@@ -66,7 +77,7 @@ const UserSearchScreen = () => {
     setLoading(false);
 
     if (result.success) {
-      navigation.replace('ChatSession', { 
+      navigation.navigate('ChatSession', { 
         chatId: result.data.id, 
         otherUser: { name: selectedUser.name, department: selectedUser.department, uid: selectedUser.uid } 
       });

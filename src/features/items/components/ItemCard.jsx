@@ -15,11 +15,19 @@ export const ItemCard = ({ item, onPress, onDelete }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.topRow}>
-        <View style={[styles.badge, isLost ? styles.badgeLost : styles.badgeFound]}>
-          <Text style={[styles.badgeText, { color: isLost ? colors.lostColor : colors.foundColor }]}>
-            ● {isLost ? 'KAYIP' : 'BULUNDU'}
-          </Text>
-        </View>
+        {(item.status === 'RESOLVED' || item.isResolved) ? (
+          <View style={[styles.badge, styles.badgeResolved]}>
+            <Text style={[styles.badgeText, { color: colors.primary }]}>
+              ● ÇÖZÜLDÜ
+            </Text>
+          </View>
+        ) : (
+          <View style={[styles.badge, isLost ? styles.badgeLost : styles.badgeFound]}>
+            <Text style={[styles.badgeText, { color: isLost ? colors.lostColor : colors.foundColor }]}>
+              ● {isLost ? 'KAYIP' : 'BULUNDU'}
+            </Text>
+          </View>
+        )}
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryText} numberOfLines={1}>{item.category}</Text>
         </View>
@@ -62,7 +70,11 @@ export const ItemCard = ({ item, onPress, onDelete }) => {
       <View style={styles.divider} />
       <View style={styles.bottomRow}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+          {item.ownerPhoto ? (
+            <Image source={{ uri: item.ownerPhoto }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>{initials}</Text>
+          )}
         </View>
         <Text style={styles.ownerName}>{item.ownerName}</Text>
         <TouchableOpacity style={styles.contactBtn} onPress={onPress}>
@@ -120,10 +132,12 @@ const styles = StyleSheet.create({
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   avatar: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.avatarBg,
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
-  avatarText: { fontSize: 11, fontWeight: 'bold', color: '#fff' },
+  avatarText: { fontSize: 11, fontWeight: 'bold', color: colors.primary },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 14 },
   ownerName: { flex: 1, fontSize: 12, color: colors.textSecondary },
   contactBtn: {
     paddingHorizontal: 16, paddingVertical: 6,
@@ -131,5 +145,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.divider,
   },
   contactBtnText: { fontSize: 12, fontWeight: 'bold', color: colors.primary },
+  badgeResolved: { backgroundColor: '#E8EAF6' }, // Very light Indigo for high contrast
 });
 

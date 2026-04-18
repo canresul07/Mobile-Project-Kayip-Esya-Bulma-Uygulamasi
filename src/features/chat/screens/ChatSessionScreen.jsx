@@ -148,7 +148,21 @@ const ChatSessionScreen = () => {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.headerBtn}>
+          <TouchableOpacity 
+            style={styles.headerBtn}
+            onPress={() => {
+              Alert.alert(
+                otherUser.name,
+                'Yapmak istediğiniz işlemi seçin',
+                [
+                  { text: 'Profili Görüntüle', onPress: () => navigation.navigate('ChatUserDetail', { user: otherUser }) },
+                  { text: 'Sohbeti Temizle', style: 'destructive', onPress: () => Alert.alert('Gelecek Güncelleme', 'Bu özellik yakında eklenecektir.') },
+                  { text: 'Kullanıcıyı Bildir/Engelle', style: 'destructive', onPress: () => Alert.alert('Bildir', 'Kullanıcı bildirildi. İnceleme başlatılacaktır.') },
+                  { text: 'Vazgeç', style: 'cancel' }
+                ]
+              );
+            }}
+          >
             <Ionicons name="ellipsis-horizontal" size={24} color={colors.textHint} />
           </TouchableOpacity>
         </View>

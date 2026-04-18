@@ -37,9 +37,10 @@ export const useAuth = () => {
         setUser(firebaseUser);
         try {
           const profileResponse = await authService.getUserProfile(firebaseUser.uid);
-          console.log('[Auth] Profile fetch result:', profileResponse.success ? 'Success' : 'Failed');
           if (profileResponse.success) {
-            setUserProfile(profileResponse.data);
+            // Auto-migration for search consistency
+            const consistentProfile = await authService.ensureProfileConsistency(firebaseUser.uid, profileResponse.data);
+            setUserProfile(consistentProfile);
           }
         } catch (err) {
           console.error('[Auth] Error fetching profile:', err);
@@ -131,5 +132,6 @@ export const useAuth = () => {
     register,
     logout,
     updateProfile,
+    updatePassword: authService.updatePassword,
   };
 };
